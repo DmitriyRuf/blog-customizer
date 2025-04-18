@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, FormEvent } from 'react';
+import { useState, useRef, FormEvent } from 'react';
+import { useClose } from '../../hooks/useClose';
 /*Использем clsx для установки классов компонентов*/
 import { clsx } from 'clsx';
 /*Импортируем компоненты формы из UI*/
-import { ArrowButton } from 'src/ui/arrow-button';
-import { Button } from 'src/ui/button';
+import { ArrowButton } from '../../ui/arrow-button';
+import { Button } from '../../ui/button';
 import { Text } from '../../ui/text';
 import { Select } from '../../ui/select';
 import { RadioGroup } from '../../ui/radio-group';
@@ -32,26 +33,17 @@ export type ArticleStateTypeName = keyof ArticleStateType;
 export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 	const { setApp } = props;
 	/*Состояние открытой формы настроек*/
-	const [isOpen, setIsOpen] = useState<boolean>(false);
+	const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
 	/*Состояние объекта с классами стилей для формы настроек*/
 	const [state, setState] = useState<ArticleStateType>(defaultArticleState);
 	/*Ссылка на комнпонент, содержащий форму настроек*/
 	const asideRef = useRef<HTMLElement>(null);
 	/*Хук для регистрации событий закрытия вне области формы настроек*/
-	useEffect(() => {
-		if (isOpen) {
-			const handleClick = (event: MouseEvent) => {
-				const { target } = event;
-				if (target instanceof Node && !asideRef.current?.contains(target)) {
-					isOpen && setIsOpen(false);
-				}
-			};
-			window.addEventListener('mousedown', handleClick);
-			return () => {
-				window.removeEventListener('mousedown', handleClick);
-			};
-		}
-	}, [setIsOpen, isOpen, asideRef]);
+	useClose({
+		isOpen: isMenuOpen,
+		onClose: () => setIsMenuOpen(false),
+		rootRef: asideRef,
+	});
 	/*Функция события для измения полей объекта состояния компонента формы настроек*/
 	const handleChangeParamsForm =
 		(name: ArticleStateTypeName) => (value: OptionType) => {
@@ -73,12 +65,17 @@ export const ArticleParamsForm = (props: ArticleParamsFormProps) => {
 	return (
 		<>
 			{/*Для компонента стрелки при клике меняем состояние открытия формы настроек*/}
-			<ArrowButton isOpen={isOpen} onClick={() => setIsOpen(!isOpen)} />
+			<ArrowButton
+				isOpen={isMenuOpen}
+				onClick={() => setIsMenuOpen(!isMenuOpen)}
+			/>
 			{/*Для aside устанавливаем класс открытия контейнера формы в зависимости от состояния isOpen*/}
 			{/*Для aside определяем ссылку для хука useRef*/}
 			<aside
 				ref={asideRef}
-				className={clsx(styles.container, isOpen && styles.container_open)}>
+				className={clsx(styles.container, {
+					[styles.container_open]: isMenuOpen,
+				})}>
 				{/*Для формы определяем события сброса и сабмита*/}
 				<form
 					className={styles.form}
